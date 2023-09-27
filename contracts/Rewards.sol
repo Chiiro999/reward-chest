@@ -2,60 +2,54 @@
 pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import {ISupraRouter} from "./interfaces/ISupraRouter.sol";
 
-contract Rewards is ERC1155 {
-    using Counters for Counters.Counter;
+contract Rewards is ERC1155, Ownable {
 
-    // Counter for unique semi-fungible token IDs
-    // Right now each reward token would have a unique ID which doesn't really
-    // make them "semi-fungible". They would act more like erc-721 tokens
-    // TODO: discuss with team and decide if each reward type should have the same tokenID per type 
-    Counters.Counter _rewardsCounter;
-
-    enum RewardId {
-        digitalWearable1,
-        digitalWearable2,
-        digitalWearable3
-    }
-    uint256 constant NUM_REWARDS = 3;
+    // Token IDs for each semi-fungible wearable items
+    uint256 public constant WEARABLE_1 = 1;
+    uint256 public constant WEARABLE_2 = 2;
+    uint256 public constant WEARABLE_3 = 3;
     
-    // Mappings to track minted semi-fungible tokens
-    mapping(uint256 => uint256) public digitalWearable1Supply;
-    mapping(uint256 => uint256) public digitalWearable2Supply;
-    mapping(uint256 => uint256) public digitalWearable3Supply;
+    // Variables to track minted semi-fungible tokens
+    uint256 public wearable1Supply = 0;
+    uint256 public wearable2Supply = 0;
+    uint256 public wearable3Supply = 0;
 
-    //TODO: add functionality to change drop rate (should be onlyOwner)
-    uint256 public constant digitalWearable1DropRate = 10;
-    uint256 public constant digitalWearable2DropRate = 30;
-    uint256 public constant digitalWearable3DropRate = 60;
+    uint256 internal epicDropRate = 10; // Epic reward
+    uint256 internal rareDropRate = 30; // Rare reward
+    uint256 internal commonDropRate = 60; // Common reward
     
-    constructor() ERC1155("https://metadata.json") {
+    constructor() ERC1155("https://metadata.json") { }
 
+    function mintWearable1(address account, uint256 amount) internal returns (uint256) {
+        wearable1Supply += amount;
+        _mint(account, WEARABLE_1, amount, "");
+        return WEARABLE_1;
     }
 
-    function mintSemiFungibleToken1(address account, uint256 amount) internal returns (uint256) {
-        _rewardsCounter.increment();
-        uint256 newTokenId = _rewardsCounter.current();
-        digitalWearable1Supply[newTokenId] = amount;
-        _mint(account, newTokenId, amount, "");
-        return newTokenId;
+    function mintWearable2(address account, uint256 amount) internal returns (uint256) {
+        wearable2Supply += amount;
+        _mint(account, WEARABLE_2, amount, "");
+        return WEARABLE_2;
     }
 
-    function mintSemiFungibleToken2(address account, uint256 amount) internal returns (uint256) {
-        _rewardsCounter.increment();
-        uint256 newTokenId = _rewardsCounter.current();
-        digitalWearable2Supply[newTokenId] = amount;
-        _mint(account, newTokenId, amount, "");
-        return newTokenId;
+    function mintWearable3(address account, uint256 amount) internal returns (uint256) {
+        wearable3Supply += amount;
+        _mint(account, WEARABLE_3, amount, "");
+        return WEARABLE_3;
     }
 
-    function mintSemiFungibleToken3(address account, uint256 amount) internal returns (uint256) {
-        _rewardsCounter.increment();
-        uint256 newTokenId = _rewardsCounter.current();
-        digitalWearable3Supply[newTokenId] = amount;
-        _mint(account, newTokenId, amount, "");
-        return newTokenId;
+    function assignDropRates(
+        uint256 common,
+        uint256 rare,
+        uint256 epic
+    ) external onlyOwner {
+        require((common + rare + epic == 100), "Drop rates must equal 100.");
+
+        commonDropRate = common;
+        rareDropRate = rare;
+        epicDropRate = epic;
     }
 }

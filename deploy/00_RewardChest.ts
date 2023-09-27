@@ -4,13 +4,13 @@ import {HardhatRuntimeEnvironment} from 'hardhat/types';
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const {deployments, getNamedAccounts} = hre;
   const {deploy, log} = deployments;
-  const {deployer} = await getNamedAccounts();
+  const {deployer, supraRouter} = await getNamedAccounts();
 
   log('Deployment - RewardChest');
 
   const result = await deploy('RewardChest', {
     from: deployer,
-    args: [],
+    args: [supraRouter],
     log: true,
     skipIfAlreadyDeployed: true,
   });

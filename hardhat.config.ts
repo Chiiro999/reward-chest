@@ -43,6 +43,8 @@ const config: HardhatUserConfig = {
   },
   namedAccounts: {
     deployer: 0,
+    alice: 1, // Test Account 1
+    bob: 2, // Test Account 2
 
     supraRouter: {
       421613: "0xe0c0c4b7fe7d07fcde1a4f0959006a71c0ebe787", // Arbitrum Goerli
@@ -51,11 +53,11 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       live: false,
-      chainId: 42161,
+      chainId: 421613,
       forking: {
         enabled: true,
-        url: process.env.MAINNET_NODE_URL ?? '',
-        blockNumber: 44564645,
+        url: process.env.GOERLI_NODE_URL ?? '',
+        blockNumber: 43713499,
       },
     },
     arbitrum: {

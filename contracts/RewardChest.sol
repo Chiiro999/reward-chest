@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: MIT 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import {SafeMath} from "@openzeppelin/contracts/math/SafeMath.sol";
 import {ISupraRouter} from "./interfaces/ISupraRouter.sol";
 import {Rewards} from "./Rewards.sol";
 
-contract RewardChest is Ownable, Rewards {
+contract RewardChest is ERC1155, Ownable, Rewards {
     using SafeMath for uint256;
     using Counters for Counters.Counter;
 
-    ISupraRouter internal supraRouter;
+    address public immutable supraAddr;
 
-    address supraAddr;
-    address supraClientAddr;
+    address public immutable supraClientAddr;
 
     Counters.Counter _rewardChestCounter;
 
@@ -23,6 +22,13 @@ contract RewardChest is Ownable, Rewards {
         bool opened;
         uint256 randomReward;
     }
+
+    enum Class {
+        Common,
+        Rare,
+        Epic
+    }
+    uint256 constant NUM_CLASSES = 3;
 
     mapping(uint256 => rewardChestData) chestData;
 
@@ -35,18 +41,24 @@ contract RewardChest is Ownable, Rewards {
         supraClientAddr = msg.sender;
     }
 
+    /// @dev Prevents sandwich / flash loan attacks & re-entrancy
+    modifier defense {
+        require(msg.sender == tx.origin, "Only EOA");
+        _;
+    }
+
     function _ownerOf(address account, uint256 tokenId) internal view returns (bool) {
         return balanceOf(account, tokenId) != 0;
     }
 
-    function mintRewardChest(address account) public onlyOwner {
+    function mintRewardChest(address account) public defense onlyOwner {
         uint256 tokenId = _rewardChestCounter.current();
         _rewardChestCounter.increment();
         _mint(account, tokenId, 1, "");
     }
 
-    function openRewardChest(address account, uint256 tokenId) public onlyOwner {
-        require(_ownerOf(account, tokenId) == true, "Not owner of token.");
+    function openRewardChest(address account, uint256 tokenId) public defense onlyOwner {
+        require(_ownerOf(account, tokenId) == true, "Not owner of Chest.");
         require(chestData[tokenId].opened == false, "Reward Chest already opened.");
 
         uint256 nonce = ISupraRouter(supraAddr).generateRequest("finishRewardChest(uint256,uint256[])", 1, 1, supraClientAddr);
@@ -66,12 +78,12 @@ contract RewardChest is Ownable, Rewards {
         uint256 randomNum = chestData[randomNumToLootBox[nonce]].randomReward;
 
         for (uint256 i = 0; i < MAX_POSSIBLE_REWARDS; i++) {
-            if (randomNum < digitalWearable1DropRate) {
-                mintSemiFungibleToken1(account, 1);
-            } else if (randomNum < digitalWearable2DropRate) {
-                mintSemiFungibleToken2(account, 1);
+            if (randomNum < epicDropRate) {
+                mintWearable1(account, 1);
+            } else if (randomNum < rareDropRate) {
+                mintWearable2(account, 1);
             } else {
-                mintSemiFungibleToken3(account, 1);
+                mintWearable3(account, 1);
             }
         }
     }
