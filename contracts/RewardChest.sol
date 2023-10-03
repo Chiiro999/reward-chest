@@ -63,10 +63,11 @@ contract RewardChest is ERC1155, Ownable, Rewards {
 
         ChestData storage chest = chests[_chestIdCounter];
 
-        for (uint64 i = 0; i < _rewardIds.length; i++) {
-            chest.rewardNameToDropRate[_rewardIds] 
-        }
-        
+        // for (uint64 i = 0; i < _rewardIds.length; i++) {
+        //     chest.rewardNameToDropRate[_rewardIds] 
+        // }
+
+        return 0;       
     }
 
     function openRewardChest(address account) public defense onlyOwner {
@@ -92,14 +93,5 @@ contract RewardChest is ERC1155, Ownable, Rewards {
     function _mintRewards(address account) internal {
         uint256 randomNum = userToRandomNumber[account];
 
-        for (uint256 i = 0; i < MAX_POSSIBLE_REWARDS; i++) {
-            if (randomNum < epicDropRate) {
-                mintWearable1(account, 1);
-            } else if (randomNum < rareDropRate) {
-                mintWearable2(account, 1);
-            } else {
-                mintWearable3(account, 1);
-            }
-        }
     }
 }

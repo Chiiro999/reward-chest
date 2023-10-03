@@ -1,11 +1,14 @@
-// SPDX-License-Identifier: MIT
 pragma solidity 0.7.6;
 
-import "./ERC1155MixedFungible.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
-contract Rewards is ERC1155MixedFungible, Ownable {
+/**
+    @dev Extension to ERC1155 for Mixed Fungible and Non-Fungible Items support
+    The main benefit is sharing of common type information, just like you do when
+    creating a fungible id.
+*/
+contract ERC1155MixedFungible is ERC1155 {
+
     // Use a split bit implementation.
     // Store the type in the upper 128 bits..
     uint256 constant TYPE_MASK = uint256(uint128(~0)) << 128;
