@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract Rewards is ERC1155, Ownable {
     using Counters for Counters.Counter;
+
+    uint256 test;
     
     // This will help keep track of token IDs for each collection
     mapping(string => Counters.Counter) private _collectionIds;
