@@ -3,53 +3,48 @@ pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import {ISupraRouter} from "./interfaces/ISupraRouter.sol";
+import "@openzeppelin/contracts/utils/Counters.sol";
 
 contract Rewards is ERC1155, Ownable {
-
-    // Token IDs for each semi-fungible wearable items
-    uint256 public constant WEARABLE_1 = 1;
-    uint256 public constant WEARABLE_2 = 2;
-    uint256 public constant WEARABLE_3 = 3;
+    using Counters for Counters.Counter;
     
-    // Variables to track minted semi-fungible tokens
-    uint256 public wearable1Supply = 0;
-    uint256 public wearable2Supply = 0;
-    uint256 public wearable3Supply = 0;
-
-    uint256 internal epicDropRate = 10; // Epic reward
-    uint256 internal rareDropRate = 30; // Rare reward
-    uint256 internal commonDropRate = 60; // Common reward
+    // This will help keep track of token IDs for each collection
+    mapping(string => Counters.Counter) private _collectionIds;
     
-    constructor() ERC1155("https://metadata.json") { }
+    // URI for each collection. We'll use this to differentiate collections
+    mapping(string => string) private _collectionURIs;
+    
+    // Array of collection names
+    string[] private _collections;
 
-    function mintWearable1(address account, uint256 amount) internal returns (uint256) {
-        wearable1Supply += amount;
-        _mint(account, WEARABLE_1, amount, "");
-        return WEARABLE_1;
+    constructor() ERC1155("https://myapi.com/api/token/{id}.json") {}
+
+    function setURIForCollection(string memory collectionName, string memory newURI) external onlyOwner {
+        // If this is a new collection, add to the array
+        if (bytes(_collectionURIs[collectionName]).length == 0) {
+            _collections.push(collectionName);
+        }
+        _collectionURIs[collectionName] = newURI;
     }
 
-    function mintWearable2(address account, uint256 amount) internal returns (uint256) {
-        wearable2Supply += amount;
-        _mint(account, WEARABLE_2, amount, "");
-        return WEARABLE_2;
+    function mint(string memory collectionName, address account, uint256 amount) external onlyOwner {
+        require(bytes(_collectionURIs[collectionName]).length > 0, "Collection does not exist");
+        
+        // Create a new ID for the token
+        _collectionIds[collectionName].increment();
+        uint256 newTokenId = _collectionIds[collectionName].current();
+
+        _mint(account, newTokenId, amount, "");
     }
 
-    function mintWearable3(address account, uint256 amount) internal returns (uint256) {
-        wearable3Supply += amount;
-        _mint(account, WEARABLE_3, amount, "");
-        return WEARABLE_3;
-    }
-
-    function assignDropRates(
-        uint256 common,
-        uint256 rare,
-        uint256 epic
-    ) external onlyOwner {
-        require((common + rare + epic == 100), "Drop rates must equal 100.");
-
-        commonDropRate = common;
-        rareDropRate = rare;
-        epicDropRate = epic;
+    function uri(uint256 tokenId) public view override returns (string memory) {
+        // Custom logic to determine the URI based on collection
+        // For simplicity, we're assuming tokenIds are sequential for each collection.
+        // You'd likely want more complex logic in a real-world scenario.
+        for (uint256 i = 0; i < _collections.length; i++) {
+            if (tokenId <= _collectionIds[_collections[i]].current()) {
+                return _collectionURIs[_collections[i]];
+            }
+        }
     }
 }

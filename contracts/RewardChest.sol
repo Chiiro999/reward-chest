@@ -16,25 +16,27 @@ contract RewardChest is ERC1155, Ownable, Rewards {
 
     address public immutable supraClientAddr;
 
-    Counters.Counter _rewardChestCounter;
-
-    struct rewardChestData {
-        bool opened;
-        uint256 randomReward;
-    }
-
-    enum Class {
-        Common,
-        Rare,
-        Epic
-    }
-    uint256 constant NUM_CLASSES = 3;
-
-    mapping(uint256 => rewardChestData) chestData;
-
-    mapping(uint256 => uint256) randomNumToLootBox;
+    Counters.Counter _chestIdCounter;
 
     uint256 constant private MAX_POSSIBLE_REWARDS = 1;
+
+    uint256 private _CUMULATIVE_PROBABILITIES_TOTAL = 1000;
+
+    struct ChestData {
+        mapping (uint256 => uint256) rewardIdToDropRate;
+        bool enabled;
+    }
+
+    struct UserRng {
+        address addr;
+        uint256 rng;
+    }
+
+    mapping(uint256 => ChestData) chests;
+
+    mapping(uint256 => address) nonceToUser;
+
+    mapping (address => uint256) userToRandomNumber;
 
     constructor(address _vrfAddress) {
         supraAddr = _vrfAddress;
@@ -47,35 +49,48 @@ contract RewardChest is ERC1155, Ownable, Rewards {
         _;
     }
 
-    function _ownerOf(address account, uint256 tokenId) internal view returns (bool) {
+    /// @notice Adds a new chest type with its own loot table and drop chance per loot
+    /// @param _rewardIds Array of existing collection name
+    /// @param _cumulativeProbablities Array of cumulative probablities for each reward IDs
+    function addChest(
+        string[] memory _rewardIds,
+        uint256[] memory _cumulativeProbablities
+    ) external onlyOwner returns(uint256) {
+        require(_rewardIds.length != 0, "Array length 0");
+        require(rewardIds.length == _cumulativeProbablities.length, "rewardIds and cumulativeProbabilities not equal length");
+
+        _chestIdCounter.increment();
+
+        ChestData storage chest = chests[_chestIdCounter];
+
+        for (uint64 i = 0; i < _rewardIds.length; i++) {
+            chest.rewardNameToDropRate[_rewardIds] 
+        }
+        
+    }
+
+    function openRewardChest(address account) public defense onlyOwner {
+        uint256 nonce = ISupraRouter(supraAddr).generateRequest("_finishRewardChest(uint256,uint256[])", 1, 1, supraClientAddr);
+        nonceToUser[nonce] = account;
+
+        mintRewards(account);
+    }
+
+    function _ownerOf(
+        address account,
+        uint256 tokenId
+    ) internal view returns (bool) {
         return balanceOf(account, tokenId) != 0;
     }
 
-    function mintRewardChest(address account) public defense onlyOwner {
-        uint256 tokenId = _rewardChestCounter.current();
-        _rewardChestCounter.increment();
-        _mint(account, tokenId, 1, "");
-    }
-
-    function openRewardChest(address account, uint256 tokenId) public defense onlyOwner {
-        require(_ownerOf(account, tokenId) == true, "Not owner of Chest.");
-        require(chestData[tokenId].opened == false, "Reward Chest already opened.");
-
-        uint256 nonce = ISupraRouter(supraAddr).generateRequest("finishRewardChest(uint256,uint256[])", 1, 1, supraClientAddr);
-        randomNumToLootBox[nonce] = tokenId;
-
-        mintRewards(account, nonce);
-    }
-
-    function finishRewardChest(uint256 nonce, uint256[] calldata rngList) internal {
+    function _finishRewardChest(uint256 nonce, uint256[] calldata rngList) internal {
         require(msg.sender == supraAddr, "Only supra router can call this function");
 
-        chestData[randomNumToLootBox[nonce]].opened = true;
-        chestData[randomNumToLootBox[nonce]].randomReward = rngList[0] % 100;
+        userToRandomNumber[nonceToUser[nonce]] = rngList[0] % _CUMULATIVE_PROBABILITIES_TOTAL;
     }
 
-    function mintRewards(address account, uint256 nonce) internal {
-        uint256 randomNum = chestData[randomNumToLootBox[nonce]].randomReward;
+    function _mintRewards(address account) internal {
+        uint256 randomNum = userToRandomNumber[account];
 
         for (uint256 i = 0; i < MAX_POSSIBLE_REWARDS; i++) {
             if (randomNum < epicDropRate) {
