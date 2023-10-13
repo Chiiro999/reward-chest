@@ -1,4 +1,4 @@
-import {RewardChest} from '../../types';
+import {FreedomWorldAssets} from '../../types';
 
 export interface Fixture {
   deployer: Account;
@@ -8,5 +8,5 @@ export interface Fixture {
 
 export interface Account {
   address: string;
-  rewardChest: RewardChest,
+  freedomWorldAssets: FreedomWorldAssets,
 }

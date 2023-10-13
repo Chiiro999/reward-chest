@@ -1,20 +1,18 @@
 import {deployments, ethers} from "hardhat";
-import {RewardChest} from '../../types';
+import {FreedomWorldAssets} from '../../types';
 import {Account} from './types';
 
-export const setupAccount = async (account: string): Promise<Account> => {
-  //const signer = await ethers.getSigner(account);
+export const setupAccount = async (account: string, freedomWorldAssetsAddress: string): Promise<Account> => {
 
-  await deployments.fixture(['RewardChest']);
+  await deployments.fixture(['FreedomWorldAssets']);
 
-  const rewardChestContract = await deployments.get("RewardChest");
+  const freedomWorldAssetsContract = await ethers.getContractAt("FreedomWorldAssets", freedomWorldAssetsAddress) as unknown as FreedomWorldAssets;
 
-  const rewardChest = (await ethers.getContractAt(rewardChestContract.abi, rewardChestContract.address)) as RewardChest;
-
-  //const rewardChest = (await ethers.getContract('RewardChest', signer)) as RewardChest;
+  // DEBUG
+  //console.log("reward contract address: ", await freedomWorldAssetsContract.getAddress());
 
   return {
     address: account,
-    rewardChest,
+    freedomWorldAssets: freedomWorldAssetsContract,
   };
 };

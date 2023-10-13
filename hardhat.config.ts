@@ -8,12 +8,13 @@ import 'hardhat-abi-exporter';
 import 'hardhat-deploy';
 import 'hardhat-gas-reporter';
 import 'hardhat-spdx-license-identifier';
+import "@openzeppelin/hardhat-upgrades";
 import { HardhatUserConfig } from 'hardhat/config';
 
 /** @type import('hardhat/config').HardhatUserConfig */
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.7.6',
+    version: '0.8.9',
     settings: {
       optimizer: {
         enabled: true,
@@ -48,6 +49,9 @@ const config: HardhatUserConfig = {
 
     supraRouter: {
       421613: "0xe0c0c4b7fe7d07fcde1a4f0959006a71c0ebe787", // Arbitrum Goerli
+    },
+    freedomWorldAssetsAddress: {
+      421613: '0xA272fB0D17DC50652Fda5cF1651C6f8f21Fb02A8', // address of the contract instance
     }
   },
   networks: {
